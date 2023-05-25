@@ -43,7 +43,7 @@ public final class App {
     // Path to crypto materials.
     private static final Path CRYPTO_PATH =Paths.get("/home/fabric/go/src/github.com/Joao-Quinta/2-fabric-samples/test-network/organizations/peerOrganizations/org1.example.com");
     // Path to user certificate.
-    private static final Path CERT_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/signcerts/cert.pem"));
+    private static final Path CERT_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/signcerts/User1@org1.example.com-cert.pem"));
     // Path to user private key directory.
     private static final Path KEY_DIR_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/keystore"));
     // Path to peer tls certificate.
