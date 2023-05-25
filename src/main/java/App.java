@@ -24,6 +24,7 @@ import org.hyperledger.fabric.client.identity.Signer;
 import org.hyperledger.fabric.client.identity.Signers;
 import org.hyperledger.fabric.client.identity.X509Identity;
 
+import java.util.Base64;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -31,8 +32,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.cert.CertificateException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
+import java.util.AbstractMap.SimpleEntry;
 
 public final class App {
 
@@ -53,8 +57,31 @@ public final class App {
     private static final Path TLS_CERT_PATH = CRYPTO_PATH.resolve(Paths.get("peers/peer0.org1.example.com/tls/ca.crt"));
 
     // Gateway peer end point.
-    private static final String PEER_ENDPOINT = "localhost:7051";
+    private static final String PEER_ENDPOINT = "localhost:9071";
     private static final String OVERRIDE_AUTH = "peer0.org1.example.com";
+
+	/*
+	private static final String MSP_ID = "Org2MSP";
+    private static final String CHANNEL_NAME = "mychannel";
+    private static final String CHAINCODE_NAME = "simple";
+
+    
+    // Path to crypto materials.
+    private static final Path CRYPTO_PATH =Paths.get("/home/fabric/go/src/github.com/Joao-Quinta/2-fabric-samples/test-network/organizations/peerOrganizations/org2.example.com");
+    // Path to user certificate.
+    private static final Path CERT_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org2.example.com/msp/signcerts/User1@org2.example.com-cert.pem"));
+    //private static X509Certificate certificate;
+    private static java.security.cert.X509Certificate certificate;
+    // Path to user private key directory.
+    private static final Path KEY_DIR_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org2.example.com/msp/keystore"));
+    // Path to peer tls certificate.
+    private static final Path TLS_CERT_PATH = CRYPTO_PATH.resolve(Paths.get("peers/peer0.org2.example.com/tls/ca.crt"));
+
+    // Gateway peer end point.
+    private static final String PEER_ENDPOINT = "localhost:9051";
+    private static final String OVERRIDE_AUTH = "peer0.org2.example.com";  
+	 
+	*/
     
 
     private Contract contract;
@@ -120,8 +147,36 @@ public final class App {
 	}
 
 	public void run() throws GatewayException, CommitException {
-        System.out.println("Connection made");
-        System.out.println(certificate.toString());		
+		final SimpleEntry<String,String> toPush = computeDidKeyPair(certificate);
+		System.out.println(toPush.getKey());
+		System.out.println();
+		System.out.println(toPush.getValue());
+		contract.submitTransaction("put", toPush.getKey(), toPush.getValue());
+	}
+
+	public SimpleEntry<String,String> computeDidKeyPair(java.security.cert.X509Certificate cer){
+		String publicKeyAsString = cer.getPublicKey().toString();
+		String DID_ = computeDID(cer);
+		return new SimpleEntry<String,String>(DID_, publicKeyAsString);
+	}
+
+	public String computeDID(java.security.cert.X509Certificate cer){
+		String publicKeyPEM = Base64.getEncoder().encodeToString(cer.getPublicKey().getEncoded());
+		MessageDigest digest;
+		try {
+			digest = MessageDigest.getInstance("SHA-256");
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+		byte[] hash = digest.digest(publicKeyPEM.getBytes(StandardCharsets.UTF_8));
+		StringBuilder hexString = new StringBuilder();
+		for (byte b : hash) {
+			String hex = Integer.toHexString(0xff & b);
+			if(hex.length() == 1) hexString.append('0');
+			hexString.append(hex);
+		}
+		String hashedPublicKeyPEM = hexString.toString();
+		return "did:hlf:"+hashedPublicKeyPEM;
 	}
 
     
