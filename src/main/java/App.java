@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import com.google.api.Advice.Builder;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
@@ -44,6 +45,8 @@ public final class App {
     private static final Path CRYPTO_PATH =Paths.get("/home/fabric/go/src/github.com/Joao-Quinta/2-fabric-samples/test-network/organizations/peerOrganizations/org1.example.com");
     // Path to user certificate.
     private static final Path CERT_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/signcerts/User1@org1.example.com-cert.pem"));
+    //private static X509Certificate certificate;
+    private static java.security.cert.X509Certificate certificate;
     // Path to user private key directory.
     private static final Path KEY_DIR_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/keystore"));
     // Path to peer tls certificate.
@@ -52,6 +55,7 @@ public final class App {
     // Gateway peer end point.
     private static final String PEER_ENDPOINT = "localhost:7051";
     private static final String OVERRIDE_AUTH = "peer0.org1.example.com";
+    
 
     private Contract contract;
     private static final String assetId = "asset" + Instant.now().toEpochMilli();
@@ -69,7 +73,7 @@ public final class App {
 				.endorseOptions(options -> options.withDeadlineAfter(15, TimeUnit.SECONDS))
 				.submitOptions(options -> options.withDeadlineAfter(5, TimeUnit.SECONDS))
 				.commitStatusOptions(options -> options.withDeadlineAfter(1, TimeUnit.MINUTES));
-
+        
 		try (var gateway = builder.connect()) {
 			new App(gateway).run();
 		} finally {
@@ -89,8 +93,7 @@ public final class App {
 
     private static Identity newIdentity() throws IOException, CertificateException {
 		var certReader = Files.newBufferedReader(CERT_PATH);
-		var certificate = Identities.readX509Certificate(certReader);
-
+		certificate = Identities.readX509Certificate(certReader);
 		return new X509Identity(MSP_ID, certificate);
 	}
 
@@ -118,7 +121,7 @@ public final class App {
 
 	public void run() throws GatewayException, CommitException {
         System.out.println("Connection made");
-		
+        System.out.println(certificate.toString());		
 	}
 
     
