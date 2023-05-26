@@ -23,7 +23,11 @@ import org.hyperledger.fabric.client.identity.Identity;
 import org.hyperledger.fabric.client.identity.Signer;
 import org.hyperledger.fabric.client.identity.Signers;
 import org.hyperledger.fabric.client.identity.X509Identity;
-
+import java.math.BigInteger;
+import java.security.interfaces.ECPrivateKey;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -39,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.AbstractMap.SimpleEntry;
 
 public final class App {
-
+	/* 
     private static final String MSP_ID = "Org1MSP";
     private static final String CHANNEL_NAME = "mychannel";
     private static final String CHAINCODE_NAME = "simple";
@@ -51,16 +55,17 @@ public final class App {
     private static final Path CERT_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/signcerts/User1@org1.example.com-cert.pem"));
     //private static X509Certificate certificate;
     private static java.security.cert.X509Certificate certificate;
+	
     // Path to user private key directory.
     private static final Path KEY_DIR_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/keystore"));
     // Path to peer tls certificate.
     private static final Path TLS_CERT_PATH = CRYPTO_PATH.resolve(Paths.get("peers/peer0.org1.example.com/tls/ca.crt"));
 
     // Gateway peer end point.
-    private static final String PEER_ENDPOINT = "localhost:9071";
-    private static final String OVERRIDE_AUTH = "peer0.org1.example.com";
+    private static final String PEER_ENDPOINT = "localhost:7051";
+    private static final String OVERRIDE_AUTH = "peer0.org1.example.com";*/
 
-	/*
+	/**/
 	private static final String MSP_ID = "Org2MSP";
     private static final String CHANNEL_NAME = "mychannel";
     private static final String CHAINCODE_NAME = "simple";
@@ -70,8 +75,11 @@ public final class App {
     private static final Path CRYPTO_PATH =Paths.get("/home/fabric/go/src/github.com/Joao-Quinta/2-fabric-samples/test-network/organizations/peerOrganizations/org2.example.com");
     // Path to user certificate.
     private static final Path CERT_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org2.example.com/msp/signcerts/User1@org2.example.com-cert.pem"));
+	private static final Path PRIV_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org2.example.com/msp/keystore/priv_sk"));
+	
     //private static X509Certificate certificate;
     private static java.security.cert.X509Certificate certificate;
+	private static java.security.PrivateKey privateKey;
     // Path to user private key directory.
     private static final Path KEY_DIR_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org2.example.com/msp/keystore"));
     // Path to peer tls certificate.
@@ -81,7 +89,7 @@ public final class App {
     private static final String PEER_ENDPOINT = "localhost:9051";
     private static final String OVERRIDE_AUTH = "peer0.org2.example.com";  
 	 
-	*/
+	
     
 
     private Contract contract;
@@ -126,7 +134,7 @@ public final class App {
 
 	private static Signer newSigner() throws IOException, InvalidKeyException {
 		var keyReader = Files.newBufferedReader(getPrivateKeyPath());
-		var privateKey = Identities.readPrivateKey(keyReader);
+		privateKey = Identities.readPrivateKey(keyReader);
 
 		return Signers.newPrivateKeySigner(privateKey);
 	}
@@ -146,12 +154,21 @@ public final class App {
 		contract = network.getContract(CHAINCODE_NAME);
 	}
 
-	public void run() throws GatewayException, CommitException {
+	public void run() throws GatewayException, CommitException, Exception {
 		final SimpleEntry<String,String> toPush = computeDidKeyPair(certificate);
-		System.out.println(toPush.getKey());
+		System.out.println("Private Key:");
+		System.out.println();
+		System.out.println(computePrivateKey().toString());
+		System.out.println();
+		System.out.println("Public Key:");
 		System.out.println();
 		System.out.println(toPush.getValue());
-		contract.submitTransaction("put", toPush.getKey(), toPush.getValue());
+		System.out.println();
+		System.out.println("DID:");
+		System.out.println();
+		System.out.println(toPush.getKey());
+		
+		//contract.submitTransaction("put", toPush.getKey(), toPush.getValue());
 	}
 
 	public SimpleEntry<String,String> computeDidKeyPair(java.security.cert.X509Certificate cer){
@@ -178,6 +195,30 @@ public final class App {
 		String hashedPublicKeyPEM = hexString.toString();
 		return "did:hlf:"+hashedPublicKeyPEM;
 	}
+
+	public PrivateKey computePrivateKey() throws Exception{
+		String privKeyPEM = new String(Files.readAllBytes(PRIV_PATH));
+		// Remove the "BEGIN" and "END" lines
+		String privKeyEncoded = privKeyPEM.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "").replaceAll("\\s", "");
+		// Base64 decode the result
+		byte[] pkcs8EncodedBytes = Base64.getDecoder().decode(privKeyEncoded);
+		// Generate a private key
+		KeyFactory kf = KeyFactory.getInstance("EC"); // or "EC" for elliptic curve
+		PrivateKey privKey = kf.generatePrivate(new PKCS8EncodedKeySpec(pkcs8EncodedBytes));
+	
+		BigInteger keyValueInt = null;
+		if (privKey instanceof ECPrivateKey) {
+			ECPrivateKey ecPrivateKey = (ECPrivateKey) privKey;
+			keyValueInt = ecPrivateKey.getS();
+			System.out.println("Private key: " + ecPrivateKey.getS());
+		}
+		String privateKeyHex = keyValueInt.toString(16);
+		System.out.println("Private key in hexadecimal: " + privateKeyHex);
+	
+		// Now you can use the PrivateKey object in your application
+		return privKey;
+	}
+	
 
     
 }
