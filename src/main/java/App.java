@@ -53,8 +53,10 @@ public final class App {
     private static final Path CRYPTO_PATH =Paths.get("/home/fabric/go/src/github.com/Joao-Quinta/2-fabric-samples/test-network/organizations/peerOrganizations/org1.example.com");
     // Path to user certificate.
     private static final Path CERT_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/signcerts/User1@org1.example.com-cert.pem"));
+	private static final Path PRIV_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/keystore/priv_sk"));
     //private static X509Certificate certificate;
     private static java.security.cert.X509Certificate certificate;
+	private static java.security.PrivateKey privateKey;
 	
     // Path to user private key directory.
     private static final Path KEY_DIR_PATH = CRYPTO_PATH.resolve(Paths.get("users/User1@org1.example.com/msp/keystore"));
@@ -63,7 +65,8 @@ public final class App {
 
     // Gateway peer end point.
     private static final String PEER_ENDPOINT = "localhost:7051";
-    private static final String OVERRIDE_AUTH = "peer0.org1.example.com";*/
+    private static final String OVERRIDE_AUTH = "peer0.org1.example.com";
+	*/
 
 	/**/
 	private static final String MSP_ID = "Org2MSP";
@@ -87,7 +90,8 @@ public final class App {
 
     // Gateway peer end point.
     private static final String PEER_ENDPOINT = "localhost:9051";
-    private static final String OVERRIDE_AUTH = "peer0.org2.example.com";  
+    private static final String OVERRIDE_AUTH = "peer0.org2.example.com"; 
+	 
 	 
 	
     
@@ -168,7 +172,7 @@ public final class App {
 		System.out.println();
 		System.out.println(toPush.getKey());
 		
-		//contract.submitTransaction("put", toPush.getKey(), toPush.getValue());
+		contract.submitTransaction("put", toPush.getKey(), toPush.getValue());
 	}
 
 	public SimpleEntry<String,String> computeDidKeyPair(java.security.cert.X509Certificate cer){
